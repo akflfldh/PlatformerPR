@@ -64,7 +64,9 @@ void AMonsterBase::BeginPlay()
 	{
 		BodyComponent->OnComponentBeginOverlap.AddDynamic(this, &AMonsterBase::OnBeginBodyOverlap);
 	}
-
+	AController* C = GetController();
+	UE_LOG(LogTemp, Warning, TEXT("Controller: %s"), C ? *C->GetName() : TEXT("NULL"));
+	UE_LOG(LogTemp, Warning, TEXT("MovementMode: %d"), GetCharacterMovement()->MovementMode);
 }
 
 // Called every frame
@@ -122,6 +124,16 @@ float AMonsterBase::GetBodyKnockbackXYStrength() const
 float AMonsterBase::GetBodyKnockbackZStrength() const
 {
 	return BodyKnockbackStrengthZ;
+}
+
+float AMonsterBase::GetMoveToAcceptableRadius() const
+{
+	return MoveToAcceptableRadius;
+}
+
+bool AMonsterBase::GetAttackAvailableFlag() const
+{
+	return bAttackAvailable;
 }
 
 float AMonsterBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)

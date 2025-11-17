@@ -27,6 +27,9 @@ public:
 	float GetBodyKnockbackXYStrength() const;
 	float GetBodyKnockbackZStrength() const;
 
+	float GetMoveToAcceptableRadius() const;
+
+	bool GetAttackAvailableFlag() const;
 
 protected:
 	// Called when the game starts or when spawned
@@ -102,8 +105,12 @@ protected:
 #pragma endregion
 
 
+	UPROPERTY(EditAnywhere, Category = "Perception")
+	float MoveToAcceptableRadius = 100.0f;
 
 
+
+	bool bAttackAvailable = false;
 
 
 
@@ -118,10 +125,11 @@ private:
 
 	//기본적으로 넉백에대한 정보를 가진다.
 	UPROPERTY(EditAnywhere, Category = "Attack")
-	float BodyKnockbackStrengthZ = 1500.0f;
+	float BodyKnockbackStrengthZ = 300.0f;
 
 	UPROPERTY(EditAnywhere, Category = "Attack")
 	float BodyKnockbackStrengthXY = 1500.0f;
+
 
 
 

@@ -18,7 +18,7 @@ class PLATFOMERPR_API ASlimeMonster : public AMonsterBase, public IStompable
 	GENERATED_BODY()
 
 public:
-
+	ASlimeMonster();
 
 private:
 

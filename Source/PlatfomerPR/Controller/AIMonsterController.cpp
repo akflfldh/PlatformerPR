@@ -6,22 +6,29 @@
 #include"PlatfomerPR/Monster/MonsterBase.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include"PlatfomerPR/LogHelper.h"
 void AAIMonsterController::BeginPlay()
 {
 
 	Super::BeginPlay();
+
 	if (AIBehavior)
 	{
+
 		RunBehaviorTree(AIBehavior);
 		GetBlackboardComponent()->SetValueAsVector(TEXT("StartLocation"), GetPawn()->GetActorLocation());
-	}
+		GetBlackboardComponent()->SetValueAsFloat("MonsterAcceptableRadius", Character->GetMoveToAcceptableRadius());
 
+		GetBlackboardComponent()->SetValueAsBool("bAttackAvailable", Character->GetAttackAvailableFlag());
+
+	}
 }
 
 void AAIMonsterController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 	Character = Cast<AMonsterBase>(GetPawn());
+
 
 
 	if (Character)
@@ -34,6 +41,8 @@ void AAIMonsterController::OnPossess(APawn* InPawn)
 		{
 			AIPerceptionCom->OnTargetPerceptionUpdated.AddDynamic(this, &AAIMonsterController::OnTargetPerceptionUpdated);
 		}
+
+
 
 	}
 
@@ -48,6 +57,7 @@ void AAIMonsterController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus 
 
 	if (Stimulus.WasSuccessfullySensed())
 	{
+		PrintLog("Player Can see");
 		SetFocus(Actor);
 		Player = Actor;
 		UBlackboardComponent* BlackboardComponent = GetBlackboardComponent();
@@ -58,6 +68,8 @@ void AAIMonsterController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus 
 	}
 	else
 	{
+		PrintLog("Player Can't see");
+
 		//더이상 시야에 보이지않는다.
 		ClearFocus(EAIFocusPriority::Gameplay);
 		UBlackboardComponent* BlackboardComponent = GetBlackboardComponent();
@@ -86,6 +98,7 @@ void AAIMonsterController::Tick(float DeltaSeconds)
 
 		if (BlackboardComponent)
 		{
+			PrintLog(Player->GetActorLocation().ToCompactString());
 			GetBlackboardComponent()->SetValueAsVector(TEXT("PlayerLocation"), Player->GetActorLocation());
 			GetBlackboardComponent()->SetValueAsVector(TEXT("LastKnwonPlayerLocation"), Player->GetActorLocation());
 		}

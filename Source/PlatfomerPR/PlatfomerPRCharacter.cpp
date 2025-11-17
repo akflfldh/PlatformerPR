@@ -480,6 +480,12 @@ void APlatfomerPRCharacter::EnterPortal()
 
 }
 
+void APlatfomerPRCharacter::OnKnockbackLandMontageEnded(UAnimMontage* Montage, bool bInterrputed)
+{
+	PrintLog("asd");
+	bInputLock = false;
+}
+
 void APlatfomerPRCharacter::ApplyMovementInputObstacle()
 {
 
@@ -752,9 +758,16 @@ void APlatfomerPRCharacter::Landed(const FHitResult& Hit)
 
 		if (KnockbackLandMontage)
 		{
-			CharacterAnimInstance->Montage_Play(KnockbackLandMontage);
+			if (CharacterAnimInstance)
+			{
+				CharacterAnimInstance->Montage_Play(KnockbackLandMontage);
+				FOnMontageEnded EndDelegate;
+				EndDelegate.BindUObject(this, &APlatfomerPRCharacter::OnKnockbackLandMontageEnded);
+
+				CharacterAnimInstance->Montage_SetEndDelegate(EndDelegate, KnockbackLandMontage);
+
+			}
 		}
-		bInputLock = false;
 		bKnockbackInAir = false;
 	}
 
@@ -901,11 +914,17 @@ void APlatfomerPRCharacter::PlayHitReact(AActor* DamageCauser, const FDamageEven
 		KnockbackVelocity.Z = KnockbackStrengthZ;
 		LaunchCharacter(KnockbackVelocity, true, true);
 
-		//Play Animation
-		if (KnockbackInAirMontage)
-		{
-			CharacterAnimInstance->Montage_Play(KnockbackInAirMontage);
-		}
+
+		//플레이어 기준 몬스터가 공격한 방향 확인 
+		CalculateAttackedDirection(monster->GetActorLocation());
+
+		//해당방향에 맞는 knockback에니메이션몽타주 재생
+		PlayAttackedMontage();
+
+
+
+
+
 
 		bKnockbackInAir = true;
 		bInputLock = true;
@@ -1047,6 +1066,89 @@ ABaseButton* APlatfomerPRCharacter::GetNearButton()
 
 
 	return ClosestButton;
+
+}
+
+void APlatfomerPRCharacter::PlayAttackedMontage()
+{
+	//Play Animation
+	if (KnockbackInAirMontage && CharacterAnimInstance)
+	{
+		FName SectionName = NAME_None;
+
+		switch (AttackedDirection)
+		{
+
+		case EAttackDir::EFront:
+			PrintLog("Front");
+			SectionName = FName("Knockback_Front");
+			break;
+		case EAttackDir::EBack:
+			PrintLog("Back");
+			SectionName = FName("Knockback_Back");
+			break;
+
+		case EAttackDir::ERight:
+
+			break;
+
+		case EAttackDir::ELeft:
+
+			break;
+		}
+
+		CharacterAnimInstance->Montage_Play(KnockbackInAirMontage);
+		if (SectionName != NAME_None)
+		{
+			CharacterAnimInstance->Montage_JumpToSection(SectionName, KnockbackInAirMontage);
+		}
+	}
+
+}
+
+void APlatfomerPRCharacter::CalculateAttackedDirection(const FVector& AttackerLocation)
+{
+
+
+
+	//몬스터가 플레이어 기준으로 어느 방향에서 공격했는지
+
+	const FVector ToAttackerDir = (AttackerLocation - GetActorLocation()).GetSafeNormal();
+	const FVector PlayerForward = GetActorForwardVector();
+	const FVector PlayerRight = GetActorRightVector();
+
+	//+1 : 앞, -1 : 뒤  (플레이어 기준)
+	float ForwardDot = FVector::DotProduct(PlayerForward, ToAttackerDir);
+	//+1 : 오   , -1: 왼 (플레이어 기준)
+	float RightDot = FVector::DotProduct(PlayerForward, ToAttackerDir);
+
+	if (abs(ForwardDot) >= abs(RightDot))
+	{
+		PrintLog(FString::SanitizeFloat(ForwardDot));
+		//앞,or 뒤 
+		if (ForwardDot >= 0.0f)
+		{
+			AttackedDirection = EAttackDir::EFront;
+		}
+		else
+		{
+			AttackedDirection = EAttackDir::EBack;
+		}
+	}
+	else
+	{
+		//오 or 왼 
+		if (RightDot >= 0.0f)
+		{
+			AttackedDirection = EAttackDir::ERight;
+		}
+		else
+		{
+			AttackedDirection = EAttackDir::ELeft;
+		}
+	}
+
+
 
 }
 

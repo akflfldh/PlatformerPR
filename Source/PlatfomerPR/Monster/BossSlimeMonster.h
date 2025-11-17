@@ -15,7 +15,7 @@ class PLATFOMERPR_API ABossSlimeMonster : public ASlimeMonster
 	GENERATED_BODY()
 
 public:
-
+	ABossSlimeMonster();
 
 	virtual void Attack(AActor* actor) override;
 	void CancelAttack() override;

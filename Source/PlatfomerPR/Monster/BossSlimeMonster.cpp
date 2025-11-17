@@ -14,6 +14,11 @@
 
 
 
+ABossSlimeMonster::ABossSlimeMonster()
+{
+	bAttackAvailable = true;
+}
+
 void ABossSlimeMonster::Attack(AActor* actor)
 {
 	Super::Attack(actor);

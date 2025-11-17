@@ -11,4 +11,8 @@
 #include "Components/DecalComponent.h"
 #include "Components/CapsuleComponent.h"
 
-
+ASlimeMonster::ASlimeMonster()
+{
+	MoveToAcceptableRadius = 0.0f;
+	bAttackAvailable = false;
+}

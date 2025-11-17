@@ -24,6 +24,14 @@ class UHealthComponent;
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
 
+enum class EAttackDir : uint8
+{
+	EFront = 0,
+	ERight,
+	EBack,
+	ELeft
+};
+
 
 
 UCLASS(config = Game)
@@ -144,6 +152,11 @@ public:
 
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 
+
+	/** Returns CameraBoom subobject **/
+	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
+	/** Returns FollowCamera subobject **/
+	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 protected:
 
 #pragma region InputAction
@@ -166,7 +179,6 @@ protected:
 
 #pragma endregion
 
-protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
@@ -187,6 +199,10 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AnimMontage")
 	TObjectPtr<UAnimMontage> KnockbackLandMontage;
+
+
+	void OnKnockbackLandMontageEnded(UAnimMontage* Montage, bool bInterrputed);
+
 #pragma endregion
 
 private:
@@ -263,12 +279,14 @@ private:
 	AActor* GetBestInteractOverlapActor() const;
 
 
+	ABaseButton* GetNearButton();
 
 
+	void CalculateAttackedDirection(const FVector& AttackerLocation);
+	void PlayAttackedMontage();
 
 private:
 
-	ABaseButton* GetNearButton();
 
 	UCustomCharacterMovementComponent* CustomMovementComponent;
 	TArray<ABaseButton*> PressableButtonList;
@@ -289,17 +307,15 @@ private:
 
 
 	//오버랩된 상호작용가능한 액터 리스트
-	TArray < TWeakObjectPtr<AActor>> InteractActorList;
-
+	TArray <TWeakObjectPtr<AActor>> InteractActorList;
 
 
 	bool bKnockbackInAir = false;
 	bool bInputLock = false;
 
-public:
-	/** Returns CameraBoom subobject **/
-	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
-	/** Returns FollowCamera subobject **/
-	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+
+	//플레이어 공격당한 방향
+	EAttackDir AttackedDirection;
+
 };
 
