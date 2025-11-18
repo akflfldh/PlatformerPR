@@ -45,7 +45,6 @@ APlatfomerPRCharacter::APlatfomerPRCharacter(const FObjectInitializer& ObjectIni
 	bUseControllerRotationRoll = false;
 
 
-
 	CustomMovementComponent = Cast<UCustomCharacterMovementComponent>(GetMovementComponent());
 	// Configure character movement
 	GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input...	
@@ -106,7 +105,7 @@ APlatfomerPRCharacter::APlatfomerPRCharacter(const FObjectInitializer& ObjectIni
 
 	HealthComponent = CreateDefaultSubobject<UHealthComponent>(FName("HealthCom"));
 
-
+	GetMesh()->SetRelativeRotation(FRotator(0, -90, 0));
 }
 
 
@@ -760,11 +759,25 @@ void APlatfomerPRCharacter::Landed(const FHitResult& Hit)
 		{
 			if (CharacterAnimInstance)
 			{
-				CharacterAnimInstance->Montage_Play(KnockbackLandMontage);
+
+
+
+
+				PlayKnockbackLandMontage();
 				FOnMontageEnded EndDelegate;
 				EndDelegate.BindUObject(this, &APlatfomerPRCharacter::OnKnockbackLandMontageEnded);
 
 				CharacterAnimInstance->Montage_SetEndDelegate(EndDelegate, KnockbackLandMontage);
+
+
+
+
+
+
+
+
+
+
 
 			}
 		}
@@ -905,8 +918,8 @@ void APlatfomerPRCharacter::PlayHitReact(AActor* DamageCauser, const FDamageEven
 
 		FVector ToMonsterDir = (monster->GetActorLocation() - GetActorLocation()).GetSafeNormal2D();
 
-		FRotator ToMonsterRotator = ToMonsterDir.Rotation();
-		SetActorRotation(ToMonsterRotator);
+		//FRotator ToMonsterRotator = ToMonsterDir.Rotation();
+		//SetActorRotation(ToMonsterRotator);
 
 
 		FVector KnockbackVelocity = -ToMonsterDir;
@@ -919,7 +932,7 @@ void APlatfomerPRCharacter::PlayHitReact(AActor* DamageCauser, const FDamageEven
 		CalculateAttackedDirection(monster->GetActorLocation());
 
 		//해당방향에 맞는 knockback에니메이션몽타주 재생
-		PlayAttackedMontage();
+		PlayKnockbackInAirMontage();
 
 
 
@@ -1069,7 +1082,7 @@ ABaseButton* APlatfomerPRCharacter::GetNearButton()
 
 }
 
-void APlatfomerPRCharacter::PlayAttackedMontage()
+void APlatfomerPRCharacter::PlayKnockbackInAirMontage()
 {
 	//Play Animation
 	if (KnockbackInAirMontage && CharacterAnimInstance)
@@ -1106,49 +1119,88 @@ void APlatfomerPRCharacter::PlayAttackedMontage()
 
 }
 
+void APlatfomerPRCharacter::PlayKnockbackLandMontage()
+{
+
+	//Play Animation
+	if (KnockbackLandMontage && CharacterAnimInstance)
+	{
+		FName SectionName = NAME_None;
+
+		switch (AttackedDirection)
+		{
+
+		case EAttackDir::EFront:
+			PrintLog("Front");
+			SectionName = FName("Knockback_Front");
+			break;
+		case EAttackDir::EBack:
+			PrintLog("Back");
+			SectionName = FName("Knockback_Back");
+			break;
+
+		case EAttackDir::ERight:
+
+			break;
+
+		case EAttackDir::ELeft:
+
+			break;
+		}
+		PrintLog("Land1");
+
+		CharacterAnimInstance->Montage_Play(KnockbackLandMontage);
+		if (SectionName != NAME_None)
+		{
+			PrintLog("Land");
+			CharacterAnimInstance->Montage_JumpToSection(SectionName, KnockbackLandMontage);
+		}
+	}
+}
+
 void APlatfomerPRCharacter::CalculateAttackedDirection(const FVector& AttackerLocation)
 {
 
+	//  몬스터 쪽 방향 (월드 공간)
+	FVector WorldDir = (AttackerLocation - GetActorLocation());
+	WorldDir.Z = 0.f;
+	WorldDir.Normalize();
 
+	// 메쉬 기준 로컬 방향으로 변환
+	FVector LocalDir = GetTransform().InverseTransformVectorNoScale(WorldDir);
+	LocalDir.Z = 0.f;
+	LocalDir.Normalize();
 
-	//몬스터가 플레이어 기준으로 어느 방향에서 공격했는지
+	// 이제 LocalDir.x / y 로 앞/뒤/좌/우 판정
+	float ForwardAmount = LocalDir.X; // +면 앞, -면 뒤
+	float RightAmount = LocalDir.Y; // +면 오른쪽, -면 왼쪽
 
-	const FVector ToAttackerDir = (AttackerLocation - GetActorLocation()).GetSafeNormal();
-	const FVector PlayerForward = GetActorForwardVector();
-	const FVector PlayerRight = GetActorRightVector();
-
-	//+1 : 앞, -1 : 뒤  (플레이어 기준)
-	float ForwardDot = FVector::DotProduct(PlayerForward, ToAttackerDir);
-	//+1 : 오   , -1: 왼 (플레이어 기준)
-	float RightDot = FVector::DotProduct(PlayerForward, ToAttackerDir);
-
-	if (abs(ForwardDot) >= abs(RightDot))
+	//PrintLog(ToAttackerDirLocal.ToCompactString());
+	if (ForwardAmount >= 0.5f)
 	{
-		PrintLog(FString::SanitizeFloat(ForwardDot));
-		//앞,or 뒤 
-		if (ForwardDot >= 0.0f)
-		{
-			AttackedDirection = EAttackDir::EFront;
-		}
-		else
-		{
-			AttackedDirection = EAttackDir::EBack;
-		}
+		PrintLog("Front");
+		AttackedDirection = EAttackDir::EFront;
+	}
+	else if (ForwardAmount <= -0.5f)
+	{
+		PrintLog("Back");
+		AttackedDirection = EAttackDir::EBack;
+	}
+	else if (RightAmount > 0.5f)
+	{
+		AttackedDirection = EAttackDir::ERight;
 	}
 	else
 	{
-		//오 or 왼 
-		if (RightDot >= 0.0f)
-		{
-			AttackedDirection = EAttackDir::ERight;
-		}
-		else
-		{
-			AttackedDirection = EAttackDir::ELeft;
-		}
+		AttackedDirection = EAttackDir::ELeft;
 	}
 
+	//ActorTransform의 방향 확인 
+	FTransform T = GetActorTransform();
 
+	DrawDebugLine(GetWorld(), T.GetLocation(), T.GetLocation() + T.GetUnitAxis(EAxis::X) * 120, FColor::Red, false, 2, 0, 4);  // Forward
+	DrawDebugLine(GetWorld(), T.GetLocation(), T.GetLocation() + T.GetUnitAxis(EAxis::Y) * 120, FColor::Green, false, 2, 0, 4); // Right
+	DrawDebugLine(GetWorld(), T.GetLocation(), T.GetLocation() + T.GetUnitAxis(EAxis::Z) * 120, FColor::Blue, false, 2, 0, 4);  // Up
 
 }
 

@@ -20,6 +20,8 @@ class PLATFOMERPR_API ASlimeMonster : public AMonsterBase, public IStompable
 public:
 	ASlimeMonster();
 
+	void OnStomped_Implementation(AActor* StompingActor)override;
+
 private:
 
 

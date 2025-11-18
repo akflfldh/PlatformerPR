@@ -8,6 +8,7 @@ UBTTask_CustomMoveTo::UBTTask_CustomMoveTo()
 {
 
 	NodeName = TEXT("CustomMoveTo");
+	bCreateNodeInstance = true;
 }
 
 EBTNodeResult::Type UBTTask_CustomMoveTo::PerformMoveTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)

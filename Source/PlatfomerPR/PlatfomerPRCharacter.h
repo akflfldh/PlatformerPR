@@ -283,7 +283,8 @@ private:
 
 
 	void CalculateAttackedDirection(const FVector& AttackerLocation);
-	void PlayAttackedMontage();
+	void PlayKnockbackInAirMontage();
+	void PlayKnockbackLandMontage();
 
 private:
 

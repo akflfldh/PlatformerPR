@@ -16,3 +16,11 @@ ASlimeMonster::ASlimeMonster()
 	MoveToAcceptableRadius = 0.0f;
 	bAttackAvailable = false;
 }
+
+void ASlimeMonster::OnStomped_Implementation(AActor* StompingActor)
+{
+
+
+
+	Destroy();
+}
